@@ -46,10 +46,13 @@ async def startup_event():
 
 @app.post("/telegram")
 async def process_webhook(request: Request):
-    """Process Telegram webhook"""
-    update = Update.de_json(await request.json(), app.state.bot.bot)
-    await app.state.bot.process_update(update)
-    return {"status": "ok"}
+    try:
+        update = Update.de_json(await request.json(), app.state.bot.bot)
+        await app.state.bot.process_update(update)
+        return {"status": "ok"}
+    except Exception as e:
+        logger.exception("Error in /telegram endpoint")
+        return {"status": "error", "detail": str(e)}
 
 async def get_application():
     """Инициализация приложения один раз"""
@@ -425,4 +428,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         reload=bool(os.getenv("DEV_MODE")),
-    )
+    )`
