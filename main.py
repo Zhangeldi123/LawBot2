@@ -19,12 +19,33 @@ from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+import uvicorn
+from fastapi import FastAPI, Request
 
 # Caching and Rate Limiting
 import redis
 import time
 import hashlib
 from functools import lru_cache
+
+app = FastAPI()
+
+@app.post("/telegram")
+async def webhook(request: Request):
+    """Endpoint для обработки вебхуков"""
+    application = await get_application()
+    await application.update_queue.put(
+        Update.de_json(await request.json(), application.bot)
+    return {"status": "ok"}
+
+async def get_application():
+    """Инициализация приложения один раз"""
+    if not hasattr(app, "tg_application"):
+        from your_main_module import main  # Импортируйте вашу основную функцию
+        app.tg_application = await main()
+    return app.tg_application
+
+if __name__ == "__main__":
 
 # Logging configuration
 logging.basicConfig(
