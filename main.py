@@ -30,18 +30,25 @@ from functools import lru_cache
 
 app = FastAPI()
 
+
 @app.post("/telegram")
 async def webhook(request: Request):
-    """Endpoint для обработки вебхуков"""
-    application = await get_application()
-    await application.update_queue.put(
-        Update.de_json(await request.json(), application.bot))
-    return {"status": "ok"}
+    try:
+        json_data = await request.json()
+        update = Update.de_json(json_data, bot=None)  # Бот будет инициализирован позже
+
+        # Здесь должна быть обработка обновления
+        logger.info(f"Received update: {update.update_id}")
+        return {"status": "ok"}
+
+    except Exception as e:
+        logger.error(f"Webhook error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 async def get_application():
     """Инициализация приложения один раз"""
     if not hasattr(app, "tg_application"):
-        from your_main_module import main  # Импортируйте вашу основную функцию
         app.tg_application = await main()
     return app.tg_application
 
@@ -79,6 +86,11 @@ SUPPORTED_MIME_TYPES = {
 
 TEMP_DIR = "temp_downloads"
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 
 class DocumentProcessor:
     """Handles document processing, chunking, and embedding."""
@@ -409,5 +421,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    port = int(os.getenv("PORT", 8443))
+    uvicorn.run(app, host="0.0.0.0", port=port)
