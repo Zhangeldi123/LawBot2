@@ -35,7 +35,7 @@ async def webhook(request: Request):
     """Endpoint для обработки вебхуков"""
     application = await get_application()
     await application.update_queue.put(
-        Update.de_json(await request.json(), application.bot)
+        Update.de_json(await request.json(), application.bot))
     return {"status": "ok"}
 
 async def get_application():
