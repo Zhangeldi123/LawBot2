@@ -1,5 +1,5 @@
 # Используем официальный образ Python
-FROM python:3.12-slim
+FROM python:3.10-slim
 
 # Устанавливаем системные зависимости (включая swig для faiss-cpu)
 RUN apt-get update && apt-get install -y \
