@@ -45,7 +45,6 @@ async def get_application():
         app.tg_application = await main()
     return app.tg_application
 
-if __name__ == "__main__":
 
 # Logging configuration
 logging.basicConfig(
