@@ -31,20 +31,25 @@ from functools import lru_cache
 app = FastAPI()
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Startup handler for FastAPI"""
+    app.state.bot = await main()
+
+    # Set webhook if in production
+    if os.getenv("RAILWAY_ENVIRONMENT"):
+        await app.state.bot.bot.set_webhook(
+            url=f"{os.getenv('RAILWAY_STATIC_URL')}/telegram",
+            allowed_updates=Update.ALL_TYPES
+        )
+
+
 @app.post("/telegram")
-async def webhook(request: Request):
-    try:
-        json_data = await request.json()
-        update = Update.de_json(json_data, bot=None)  # Бот будет инициализирован позже
-
-        # Здесь должна быть обработка обновления
-        logger.info(f"Received update: {update.update_id}")
-        return {"status": "ok"}
-
-    except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+async def process_webhook(request: Request):
+    """Process Telegram webhook"""
+    update = Update.de_json(await request.json(), app.state.bot.bot)
+    await app.state.bot.process_update(update)
+    return {"status": "ok"}
 
 async def get_application():
     """Инициализация приложения один раз"""
@@ -396,30 +401,28 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
 
 
-async def main() -> None:
-    """Start the bot."""
-    # Create the Application
+async def main():
+    """Main async function to initialize bot"""
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Initialize RAG bot
+    # Initialize RAG components
     rag_bot = RAGBot()
     await rag_bot.initialize()
 
-    # Store RAG bot in application context
     application.bot_data["rag_bot"] = rag_bot
-
-    # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Add error handler
     application.add_error_handler(error_handler)
 
-    # Start the Bot
-    await application.run_polling()
+    return application
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=bool(os.getenv("DEV_MODE")),
+    )
