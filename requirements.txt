@@ -1,0 +1,13 @@
+python-telegram-bot==20.6
+langchain-community==0.0.29
+langchain-openai==0.1.1
+langchain==0.1.13
+openai==1.14.2
+redis==5.0.1
+sentence-transformers==2.3.1
+faiss-cpu==1.7.4
+huggingface-hub==0.21.4
+aiohttp==3.9.3
+python-dotenv==1.0.1
+tqdm==4.66.2
+numpy==1.26.4
